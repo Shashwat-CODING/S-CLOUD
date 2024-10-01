@@ -271,7 +271,7 @@ async function fetchAudioUrlWithRetry(videoId, retries = 3) {
             }
         }
         console.log(`Retrying in ${attempt + 1} seconds...`);
-        await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+        await new Promise(resolve => setTimeout(resolve, 100 * (attempt + 1)));
     }
     throw new Error('All APIs failed to provide a valid audio URL');
 }
