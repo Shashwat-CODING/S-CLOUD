@@ -79,7 +79,7 @@
         .glass {
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
-            border-radius: 10px;
+            border-radius: 10px;;
         }
 
         /* Simplified audio player styles */
@@ -90,6 +90,35 @@
         }
         .custom-audio-player audio {
             height: 40px;
+        }
+
+        /* Video card styles */
+        .video-card {
+            background-color: rgba(255, 255, 255, 0.7);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .dark .video-card {
+            background-color: rgba(40, 40, 40, 0.7);
+        }
+        .video-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
+        }
+        .video-thumbnail {
+            position: relative;
+            padding-top: 56.25%; /* 16:9 aspect ratio */
+            overflow: hidden;
+        }
+        .video-thumbnail img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
     </style>
 </head>
@@ -113,8 +142,8 @@
             </div>
         </header>
 
-        <main class="container mx-auto px-4 py-6 mb-16">
-            <form id="searchForm" class="mb-6">
+        <main class="container mx-auto px-4 py-6 mb-24">
+            <form id="searchForm" class="mb-8">
                 <div class="search-container bg-gray-200 dark:bg-youtube-darkGray">
                     <input type="text" id="searchInput" placeholder="Search for songs..." class="search-input text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400">
                     <button type="button" id="clearSearch" class="search-button text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white">
@@ -130,8 +159,8 @@
                     </button>
                 </div>
             </form>
-            <h2 id="resultsTitle" class="text-2xl font-bold mb-4 text-primary-600 dark:text-primary-400">Trending</h2>
-            <div id="results" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
+            <h2 id="resultsTitle" class="text-3xl font-bold mb-6 text-primary-600 dark:text-primary-400">Trending</h2>
+            <div id="results" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"></div>
         </main>
 
         <footer class="fixed bottom-0 left-0 right-0 glass bg-white/30 dark:bg-black/30">
@@ -144,6 +173,7 @@
         </footer>
     </div>
     <script>
+
 const searchForm = document.getElementById('searchForm');
 const searchInput = document.getElementById('searchInput');
 const resultsContainer = document.getElementById('results');
@@ -159,7 +189,7 @@ function addCacheBuster(url) {
 
 async function fetchTrendingVideos() {
     try {
-        const response = await fetch(addCacheBuster('https://pipedapi.kavin.rocks/trending?region=IN'), {
+        const response = await fetch(addCacheBuster('https://pipedapi.kavin.rocks/trending?region=IN&filter=music'), {
             cache: 'no-store'
         });
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -197,25 +227,26 @@ clearSearchButton.addEventListener('click', () => {
 });
 
 function displayResults(items) {
-    resultsContainer.innerHTML = '';
-    items.forEach(item => {
-        if (item.type === 'stream' || item.type === 'video') {
-            const videoElement = document.createElement('div');
-            videoElement.className = 'bg-white dark:bg-youtube-darkGray rounded-lg shadow-md overflow-hidden transition-transform duration-300 hover:scale-105 cursor-pointer';
-            videoElement.innerHTML = `
-                <img src="${item.thumbnail}" alt="${item.title}" class="w-full h-40 object-cover">
-                <div class="p-4">
-                    <h3 class="text-lg font-semibold mb-2 truncate">${item.title}</h3>
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">${item.uploaderName}</p>
-                    <p class="text-xs text-gray-500 dark:text-gray-500">${item.views} views • ${item.uploadedDate || item.uploaded}</p>
-                </div>
-            `;
-            videoElement.addEventListener('click', () => playAudio(item.url, item.title));
-            resultsContainer.appendChild(videoElement);
+            resultsContainer.innerHTML = '';
+            items.forEach(item => {
+                if (item.type === 'stream' || item.type === 'video') {
+                    const videoElement = document.createElement('div');
+                    videoElement.className = 'video-card';
+                    videoElement.innerHTML = `
+                        <div class="video-thumbnail">
+                            <img src="${item.thumbnail}" alt="${item.title}" loading="lazy">
+                        </div>
+                        <div class="p-4">
+                            <h3 class="text-lg font-semibold mb-2 line-clamp-2">${item.title}</h3>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">${item.uploaderName}</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-500">${item.views} views • ${item.uploadedDate || item.uploaded}</p>
+                        </div>
+                    `;
+                    videoElement.addEventListener('click', () => playAudio(item.url, item.title));
+                    resultsContainer.appendChild(videoElement);
+                }
+            });
         }
-    });
-}
-
 async function playAudio(videoUrl, title) {
     const videoId = videoUrl.split('v=')[1];
     nowPlaying.textContent = `Loading audio for: ${title}`;
