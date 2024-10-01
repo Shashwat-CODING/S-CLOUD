@@ -30,22 +30,35 @@
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Custom scrollbar styles */
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #888;
-            border-radius: 3px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #555;
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
-        /* Custom search bar styles */
+        .animated-bg {
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+        }
+
+        .light .animated-bg {
+            background: linear-gradient(-45deg, #f8fafc, #e2e8f0, #cbd5e1, #94a3b8);
+        }
+
+        .dark .animated-bg {
+            background: linear-gradient(-45deg, #1a202c, #2d3748, #4a5568, #718096);
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+        }
+
+        .dark .glass {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
         .search-container {
             display: flex;
             align-items: center;
@@ -53,10 +66,13 @@
             overflow: hidden;
             width: 100%;
             transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
+
         .search-container:focus-within {
-            box-shadow: 0 0 0 2px #4ade80;
+            box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.5);
         }
+
         .search-input {
             flex-grow: 1;
             background-color: transparent;
@@ -64,8 +80,9 @@
             border: none;
             outline: none;
             width: 100%;
-            font-size: 1rem;
+            font-size: 0.875rem;
         }
+
         .search-button {
             background: none;
             border: none;
@@ -73,26 +90,20 @@
             cursor: pointer;
             transition: color 0.3s;
         }
-        .search-divider {
-            padding: 0 0.5rem;
-        }
-        .glass {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 10px;;
-        }
 
-        /* Simplified audio player styles */
         .custom-audio-player {
             width: 100%;
             border-radius: 10px;
-            padding: 5px;
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
         }
+
         .custom-audio-player audio {
+            width: 100%;
             height: 40px;
         }
 
-        /* Video card styles */
         .video-card {
             background-color: rgba(255, 255, 255, 0.7);
             border-radius: 12px;
@@ -100,18 +111,22 @@
             transition: all 0.3s ease;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
+
         .dark .video-card {
             background-color: rgba(40, 40, 40, 0.7);
         }
+
         .video-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
         }
+
         .video-thumbnail {
             position: relative;
-            padding-top: 56.25%; /* 16:9 aspect ratio */
+            padding-top: 56.25%;
             overflow: hidden;
         }
+
         .video-thumbnail img {
             position: absolute;
             top: 0;
@@ -119,22 +134,52 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .video-card:hover .video-thumbnail img {
+            transform: scale(1.05);
+        }
+
+        .play-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .video-card:hover .play-icon {
+            opacity: 1;
+        }
+
+        .play-icon svg {
+            width: 30px;
+            height: 30px;
+            fill: white;
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-gray-100 to-white dark:from-gray-900 dark:to-black text-gray-900 dark:text-gray-100 transition-colors duration-300 font-sans min-h-screen">
-    <div class="fixed inset-0 bg-[url('https://source.unsplash.com/random/1920x1080/?abstract,light')] dark:bg-[url('https://source.unsplash.com/random/1920x1080/?abstract,dark')] bg-cover bg-center opacity-20 z-0"></div>
+<body class="animated-bg text-gray-900 dark:text-gray-100 transition-colors duration-300 font-sans min-h-screen text-sm">
     <div class="relative z-10">
-        <header class="sticky top-0 z-50 glass bg-white/30 dark:bg-black/30">
-            <div class="container mx-auto px-4 py-2 flex items-center justify-between">
+        <header class="sticky top-0 z-50 glass">
+            <div class="container mx-auto px-4 py-4 flex items-center justify-between">
                 <div class="flex items-center space-x-4">
-                    <img src="favicon.webp" alt="S-CLOUD Logo" class="w-8 h-8 rounded-full shadow-neon">
+                    <img src="favicon.webp" alt="S-CLOUD Logo" class="w-10 h-10 rounded-full shadow-lg">
                     <div>
-                        <h1 class="text-xl font-bold bg-gradient-to-r from-primary-400 to-secondary-400 text-transparent bg-clip-text">S-CLOUD</h1>
+                        <h1 class="text-2xl font-bold bg-gradient-to-r from-primary-400 to-primary-600 text-transparent bg-clip-text">S-CLOUD</h1>
                         <span class="text-xs text-gray-600 dark:text-gray-300">Made with ❤️ by Shashwat</span>
                     </div>
                 </div>
-                <button id="darkModeToggle" class="p-1 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
+                <button id="darkModeToggle" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-800 dark:text-gray-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                     </svg>
@@ -142,9 +187,9 @@
             </div>
         </header>
 
-        <main class="container mx-auto px-4 py-6 mb-24">
+        <main class="container mx-auto px-4 py-8 mb-24">
             <form id="searchForm" class="mb-8">
-                <div class="search-container bg-gray-200 dark:bg-youtube-darkGray">
+                <div class="search-container bg-white/30 dark:bg-black/30">
                     <input type="text" id="searchInput" placeholder="Search for songs..." class="search-input text-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400">
                     <button type="button" id="clearSearch" class="search-button text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
@@ -159,16 +204,16 @@
                     </button>
                 </div>
             </form>
-            <h2 id="resultsTitle" class="text-3xl font-bold mb-6 text-primary-600 dark:text-primary-400">Trending</h2>
-            <div id="results" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"></div>
+            <h2 id="resultsTitle" class="text-3xl font-bold mb-8 text-primary-600 dark:text-primary-400">Trending</h2>
+            <div id="results" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
         </main>
 
-        <footer class="fixed bottom-0 left-0 right-0 glass bg-white/30 dark:bg-black/30">
-            <div class="container mx-auto px-2 py-2">
-                <div class="custom-audio-player bg-gray-200 dark:bg-youtube-darkGray">
+        <footer class="fixed bottom-0 left-0 right-0 glass">
+            <div class="container mx-auto px-4 py-4">
+                <div class="custom-audio-player">
                     <audio id="audioPlayer" controls class="w-full"></audio>
                 </div>
-                <div id="nowPlaying" class="text-center font-semibold text-xs truncate text-primary-600 dark:text-primary-400 mt-1"></div>
+                <div id="nowPlaying" class="text-center font-semibold text-xs truncate text-primary-600 dark:text-primary-400 mt-2"></div>
             </div>
         </footer>
     </div>
