@@ -2,6 +2,7 @@ const sampleArtists = [
     { name: "Sidhu Moose Wala", image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSmqV--ZswiBYE51mONPtphc6iWd6CM8t8y5w&s" },
     { name: "Shubh", image: "https://yt3.googleusercontent.com/VkuOD8b6D6E3ayAOpDeWztKrViN5Zdbn6w7UHl7NoSRny7ZLYkMJUT22ll6JnHh3SZwY8nHUTA=s900-c-k-c0x00ffffff-no-rj" },
     { name: "Shankar Mahadevan", image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSwFtIJ3RcWVWCyvvvQCKuy27x5M9AzElHQIQ&s" },
+    { name: "Rapperiya Baalam", image: "https://yt3.googleusercontent.com/-QF04Wr0mBtqhHf6Wwzrj7nLChOs8XzdCcyH1MwYFqvfq2Onp21qZKVtlJlUH014WoLsvCsc=s900-c-k-c0x00ffffff-no-rj" },
     { name: "Yo Yo Honey Singh", image: "https://i.scdn.co/image/ab67616100005174bc7e4fffd515b47ff1ebbc1f" },
     { name: "Mashup", image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRtCz6Ec3EyW2KZ3ZBQNwjqDsjNXhuKqvj8Vw&s" },
     { name: "Arjit Singh", image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQEaO9oNwP0hT6rCxrP1_xtB2Q_ORBTsB3cmw&s" },
