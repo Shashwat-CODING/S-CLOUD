@@ -152,6 +152,50 @@
             height: 30px;
             fill: white;
         }
+
+        .artist-section {
+            display: flex;
+            overflow-x: auto;
+            overflow-y: hidden;
+            white-space: nowrap;
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+            padding-bottom: 10px;
+            margin-bottom: 2rem;
+        }
+
+        .artist-section::-webkit-scrollbar {
+            display: none;  /* Chrome, Safari and Opera */
+        }
+
+        .artist-item {
+            display: inline-block;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            margin-right: 1rem;
+        }
+
+        .artist-item:hover {
+            transform: scale(1.03);
+        }
+
+        .artist-image {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 0.5rem;
+        }
+
+        .artist-name {
+            display: block;
+            width: 120px;
+            text-align: center;
+            white-space: normal;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
     </style>
 </head>
 <body class="text-gray-900 dark:text-gray-100 transition-colors duration-300 font-sans min-h-screen text-sm">
@@ -190,6 +234,14 @@
                     </button>
                 </div>
             </form>
+
+            <section id="artistSection" class="mb-8">
+                <h2 class="text-3xl font-bold mb-4 text-primary-600 dark:text-primary-400">Popular Artists</h2>
+                <div class="artist-section">
+                    <!-- Artist items will be dynamically added here -->
+                </div>
+            </section>
+
             <h2 id="resultsTitle" class="text-3xl font-bold mb-8 text-primary-600 dark:text-primary-400">Trending</h2>
             <div id="results" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
         </main>
@@ -203,272 +255,298 @@
             </div>
         </footer>
     </div>
+    <script src="artist.js"></script>
     <script>
-const searchForm = document.getElementById('searchForm');
-const searchInput = document.getElementById('searchInput');
-const resultsContainer = document.getElementById('results');
-const audioPlayer = document.getElementById('audioPlayer');
-const nowPlaying = document.getElementById('nowPlaying');
-const resultsTitle = document.getElementById('resultsTitle');
-const clearSearchButton = document.getElementById('clearSearch');
-const darkModeToggle = document.getElementById('darkModeToggle');
+    const searchForm = document.getElementById('searchForm');
+    const searchInput = document.getElementById('searchInput');
+    const resultsContainer = document.getElementById('results');
+    const audioPlayer = document.getElementById('audioPlayer');
+    const nowPlaying = document.getElementById('nowPlaying');
+    const resultsTitle = document.getElementById('resultsTitle');
+    const clearSearchButton = document.getElementById('clearSearch');
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    const artistSection = document.getElementById('artistSection');
 
-const colorThief = new ColorThief();
-let currentThumbnail = null;
+    const colorThief = new ColorThief();
+    let currentThumbnail = null;
 
-function addCacheBuster(url) {
-    const cacheBuster = `cache_buster=${Date.now()}`;
-    return url.includes('?') ? `${url}&${cacheBuster}` : `${url}?${cacheBuster}`;
-}
-
-async function fetchTrendingVideos() {
-    try {
-        const response = await fetch(addCacheBuster('https://pipedapi.kavin.rocks/trending?region=IN&filter=music'), {
-            cache: 'no-store'
-        });
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const data = await response.json();
-        displayResults(data);
-    } catch (error) {
-        console.error('Error fetching trending videos:', error);
-        resultsContainer.innerHTML = '<p class="text-center text-red-500">An error occurred while fetching trending videos. Please try again.</p>';
+    function addCacheBuster(url) {
+        const cacheBuster = `cache_buster=${Date.now()}`;
+        return url.includes('?') ? `${url}&${cacheBuster}` : `${url}?${cacheBuster}`;
     }
-}
 
-searchForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const query = searchInput.value.trim();
-    if (query === '') return;
-
-    try {
-        const response = await fetch(addCacheBuster(`https://pipedapi.kavin.rocks/search?q=${encodeURIComponent(query)}&filter=all`), {
-            cache: 'no-store'
-        });
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const data = await response.json();
-        resultsTitle.textContent = `Search Results for "${query}"`;
-        displayResults(data.items);
-    } catch (error) {
-        console.error('Error fetching search results:', error);
-        resultsContainer.innerHTML = '<p class="text-center text-red-500">An error occurred while fetching results. Please try again.</p>';
-    }
-});
-
-clearSearchButton.addEventListener('click', () => {
-    searchInput.value = '';
-    resultsTitle.textContent = 'Trending';
-    fetchTrendingVideos();
-});
-
-function setBackgroundColor(color) {
-    document.body.style.backgroundColor = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
-}
-
-function getAverageColor(imgEl) {
-    return new Promise((resolve) => {
-        if (imgEl.complete) {
-            resolve(colorThief.getColor(imgEl));
-        } else {
-            imgEl.addEventListener('load', function() {
-                resolve(colorThief.getColor(this));
+    function createArtistElements() {
+            const artistContainer = artistSection.querySelector('.artist-section');
+            sampleArtists.forEach(artist => {
+                const artistElement = document.createElement('div');
+                artistElement.className = 'artist-item';
+                artistElement.innerHTML = `
+                    <img src="${artist.image}" alt="${artist.name}" class="artist-image">
+                    <span class="artist-name text-sm font-medium">${artist.name}</span>
+                `;
+                artistElement.addEventListener('click', () => searchArtist(artist.name));
+                artistContainer.appendChild(artistElement);
             });
         }
-    });
-}
 
-async function updateBackgroundColor(thumbnailUrl) {
-    if (thumbnailUrl === currentThumbnail) return;
-    currentThumbnail = thumbnailUrl;
-
-    const img = new Image();
-    img.crossOrigin = "Anonymous";
-    img.src = thumbnailUrl;
-
-    try {
-        const color = await getAverageColor(img);
-        setBackgroundColor(color);
-    } catch (error) {
-        console.error('Error getting average color:', error);
-        setDefaultBackground();
+    function searchArtist(artistName) {
+        searchInput.value = artistName;
+        performSearch(artistName);
     }
-}
 
-function setDefaultBackground() {
-    setBackgroundColor([30, 15, 0]); // Orangish black
-}
-
-function displayResults(items) {
-    resultsContainer.innerHTML = '';
-    items.forEach(item => {
-        if (item.type === 'stream' || item.type === 'video') {
-            const videoElement = document.createElement('div');
-            videoElement.className = 'video-card';
-            videoElement.innerHTML = `
-                <div class="video-thumbnail">
-                    <img src="${item.thumbnail}" alt="${item.title}" loading="lazy">
-                </div>
-                <div class="p-4">
-                    <h3 class="text-lg font-semibold mb-2 line-clamp-2">${item.title}</h3>
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">${item.uploaderName}</p>
-                    <p class="text-xs text-gray-500 dark:text-gray-500">${item.views} views • ${item.uploadedDate || item.uploaded}</p>
-                </div>
-            `;
-            videoElement.addEventListener('click', () => playAudio(item.url, item.title, item.thumbnail));
-            resultsContainer.appendChild(videoElement);
+    async function performSearch(query) {
+        try {
+            const response = await fetch(addCacheBuster(`https://pipedapi.kavin.rocks/search?q=${encodeURIComponent(query)}&filter=all`), {cache: 'no-store'
+            });
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const data = await response.json();
+            resultsTitle.textContent = `Search Results for "${query}"`;
+            displayResults(data.items);
+            artistSection.style.display = 'none';
+        } catch (error) {
+            console.error('Error fetching search results:', error);
+            resultsContainer.innerHTML = '<p class="text-center text-red-500">An error occurred while fetching results. Please try again.</p>';
         }
-    });
-}
-
-async function playAudio(videoUrl, title, thumbnailUrl) {
-    const videoId = videoUrl.split('v=')[1];
-    nowPlaying.textContent = `Loading audio for: ${title}`;
-
-    try {
-        const audioUrl = await fetchAudioUrlWithRetry(videoId);
-        audioPlayer.src = audioUrl;
-        await audioPlayer.play();
-        nowPlaying.textContent = `Now playing: ${title}`;
-        updateBackgroundColor(thumbnailUrl);
-    } catch (error) {
-        console.error('Error fetching or playing audio stream:', error);
-        nowPlaying.textContent = 'Error: Could not play audio. Click to retry.';
-        nowPlaying.onclick = () => playAudio(videoUrl, title, thumbnailUrl);
     }
-}
 
-async function fetchAudioUrlWithRetry(videoId, retries = 3) {
-    const apis = [
-        { name: 'Piped', fetch: fetchPipedApiUrl },
-        { name: 'Second Piped', fetch: fetchSecondPipedApiUrl },
-        { name: 'AceThinker', fetch: fetchAceThinkerApiUrl },
-        { name: 'New API', fetch: fetchNewApiUrl },
-        { name: 'Cobalt', fetch: fetchCobaltApiUrl },
-        { name: 'YtdlOnline', fetch: fetchYtdlOnlineUrl }
-    ];
+    async function fetchTrendingVideos() {
+        try {
+            const response = await fetch(addCacheBuster('https://pipedapi.kavin.rocks/trending?region=IN&filter=music'), {
+                cache: 'no-store'
+            });
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const data = await response.json();
+            displayResults(data);
+        } catch (error) {
+            console.error('Error fetching trending videos:', error);
+            resultsContainer.innerHTML = '<p class="text-center text-red-500">An error occurred while fetching trending videos. Please try again.</p>';
+        }
+    }
 
-    for (let attempt = 0; attempt < retries; attempt++) {
-        for (const api of apis) {
-            try {
-                console.log(`Attempting to fetch from ${api.name} API...`);
-                const url = await api.fetch(videoId);
-                if (url) {
-                    console.log(`Success! ${api.name} API returned a valid URL: ${url}`);
-                    return url;
-                } else {
-                    console.log(`${api.name} API did not return a valid URL.`);
-                }
-            } catch (error) {
-                console.error(`Error fetching from ${api.name} API:`, error);
+    searchForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const query = searchInput.value.trim();
+        if (query === '') return;
+        performSearch(query);
+    });
+
+    clearSearchButton.addEventListener('click', () => {
+        searchInput.value = '';
+        resultsTitle.textContent = 'Trending';
+        artistSection.style.display = 'block';
+        fetchTrendingVideos();
+    });
+
+    function setBackgroundColor(color) {
+        document.body.style.backgroundColor = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
+    }
+
+    function getAverageColor(imgEl) {
+        return new Promise((resolve) => {
+            if (imgEl.complete) {
+                resolve(colorThief.getColor(imgEl));
+            } else {
+                imgEl.addEventListener('load', function() {
+                    resolve(colorThief.getColor(this));
+                });
             }
-        }
-        console.log(`Retrying in ${attempt + 1} seconds...`);
-        await new Promise(resolve => setTimeout(resolve, 100 * (attempt + 1)));
+        });
     }
-    throw new Error('All APIs failed to provide a valid audio URL');
-}
 
-async function fetchPipedApiUrl(videoId) {
-    const response = await fetch(addCacheBuster(`https://pipedapi.reallyaweso.me/streams/${videoId}`), {
-        cache: 'no-store'
-    });
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    const data = await response.json();
-    const audioStream = data.audioStreams.find(stream => stream.mimeType.startsWith('audio/'));
-    return audioStream ? audioStream.url : null;
-}
+    async function updateBackgroundColor(thumbnailUrl) {
+        if (thumbnailUrl === currentThumbnail) return;
+        currentThumbnail = thumbnailUrl;
 
-async function fetchSecondPipedApiUrl(videoId) {
-    const response = await fetch(addCacheBuster(`https://pipedapi.adminforge.de/streams/${videoId}`), {
-        cache: 'no-store'
-    });
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    const data = await response.json();
-    const audioStream = data.audioStreams.find(stream => stream.mimeType.startsWith('audio/'));
-    return audioStream ? audioStream.url : null;
-}
+        const img = new Image();
+        img.crossOrigin = "Anonymous";
+        img.src = thumbnailUrl;
 
-async function fetchAceThinkerApiUrl(videoId) {
-    const encodedVideoId = encodeURIComponent(`https://www.youtube.com/watch?v=${videoId}`);
-    const apiUrl = `https://www.acethinker.com/downloader/api/video_info.php?url=${encodedVideoId}&israpid=1&ismp3=0`;
+        try {
+            const color = await getAverageColor(img);
+            setBackgroundColor(color);
+        } catch (error) {
+            console.error('Error getting average color:', error);
+            setDefaultBackground();
+        }
+    }
 
-    try {
-        const response = await fetch(addCacheBuster(apiUrl), {
+    function setDefaultBackground() {
+        setBackgroundColor([30, 15, 0]); // Orangish black
+    }
+
+    function displayResults(items) {
+        resultsContainer.innerHTML = '';
+        items.forEach(item => {
+            if (item.type === 'stream' || item.type === 'video') {
+                const videoElement = document.createElement('div');
+                videoElement.className = 'video-card';
+                videoElement.innerHTML = `
+                    <div class="video-thumbnail">
+                        <img src="${item.thumbnail}" alt="${item.title}" loading="lazy">
+                    </div>
+                    <div class="p-4">
+                        <h3 class="text-lg font-semibold mb-2 line-clamp-2">${item.title}</h3>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">${item.uploaderName}</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-500">${item.views} views • ${item.uploadedDate || item.uploaded}</p>
+                    </div>
+                `;
+                videoElement.addEventListener('click', () => playAudio(item.url, item.title, item.thumbnail));
+                resultsContainer.appendChild(videoElement);
+            }
+        });
+    }
+
+    async function playAudio(videoUrl, title, thumbnailUrl) {
+        const videoId = videoUrl.split('v=')[1];
+        nowPlaying.textContent = `Loading audio for: ${title}`;
+
+        try {
+            const audioUrl = await fetchAudioUrlWithRetry(videoId);
+            audioPlayer.src = audioUrl;
+            await audioPlayer.play();
+            nowPlaying.textContent = `Now playing: ${title}`;
+            updateBackgroundColor(thumbnailUrl);
+        } catch (error) {
+            console.error('Error fetching or playing audio stream:', error);
+            nowPlaying.textContent = 'Error: Could not play audio. Click to retry.';
+            nowPlaying.onclick = () => playAudio(videoUrl, title, thumbnailUrl);
+        }
+    }
+
+    async function fetchAudioUrlWithRetry(videoId, retries = 3) {
+        const apis = [
+            { name: 'Piped', fetch: fetchPipedApiUrl },
+            { name: 'Second Piped', fetch: fetchSecondPipedApiUrl },
+            { name: 'AceThinker', fetch: fetchAceThinkerApiUrl },
+            { name: 'New API', fetch: fetchNewApiUrl },
+            { name: 'Cobalt', fetch: fetchCobaltApiUrl },
+            { name: 'YtdlOnline', fetch: fetchYtdlOnlineUrl }
+        ];
+
+        for (let attempt = 0; attempt < retries; attempt++) {
+            for (const api of apis) {
+                try {
+                    console.log(`Attempting to fetch from ${api.name} API...`);
+                    const url = await api.fetch(videoId);
+                    if (url) {
+                        console.log(`Success! ${api.name} API returned a valid URL: ${url}`);
+                        return url;
+                    } else {
+                        console.log(`${api.name} API did not return a valid URL.`);
+                    }
+                } catch (error) {
+                    console.error(`Error fetching from ${api.name} API:`, error);
+                }
+            }
+            console.log(`Retrying in ${attempt + 1} seconds...`);
+            await new Promise(resolve => setTimeout(resolve, 100 * (attempt + 1)));
+        }
+        throw new Error('All APIs failed to provide a valid audio URL');
+    }
+
+    async function fetchPipedApiUrl(videoId) {
+        const response = await fetch(addCacheBuster(`https://pipedapi.reallyaweso.me/streams/${videoId}`), {
             cache: 'no-store'
         });
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        
         const data = await response.json();
-        const webaLink = data.links.flat().find(link => link.ext === 'weba');
-        return webaLink ? webaLink.url : null;
-    } catch (error) {
-        console.error('Error fetching from AceThinker API:', error);
-        return null;
+        const audioStream = data.audioStreams.find(stream => stream.mimeType.startsWith('audio/'));
+        return audioStream ? audioStream.url : null;
     }
-}
 
-async function fetchNewApiUrl(videoId) {
-    const response = await fetch(addCacheBuster(`https://kityune.imput.net/api/json?id=${videoId}`), {
-        cache: 'no-store'
+    async function fetchSecondPipedApiUrl(videoId) {
+        const response = await fetch(addCacheBuster(`https://pipedapi.adminforge.de/streams/${videoId}`), {
+            cache: 'no-store'
+        });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
+        const audioStream = data.audioStreams.find(stream => stream.mimeType.startsWith('audio/'));
+        return audioStream ? audioStream.url : null;
+    }
+
+    async function fetchAceThinkerApiUrl(videoId) {
+        const encodedVideoId = encodeURIComponent(`https://www.youtube.com/watch?v=${videoId}`);
+        const apiUrl = `https://www.acethinker.com/downloader/api/video_info.php?url=${encodedVideoId}&israpid=1&ismp3=0`;
+
+        try {
+            const response = await fetch(addCacheBuster(apiUrl), {
+                cache: 'no-store'
+            });
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            
+            const data = await response.json();
+            const webaLink = data.links.flat().find(link => link.ext === 'weba');
+            return webaLink ? webaLink.url : null;
+        } catch (error) {
+            console.error('Error fetching from AceThinker API:', error);
+            return null;
+        }
+    }
+
+    async function fetchNewApiUrl(videoId) {
+        const response = await fetch(addCacheBuster(`https://kityune.imput.net/api/json?id=${videoId}`), {
+            cache: 'no-store'
+        });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
+        return data.status === 'stream' && data.url ? data.url : null;
+    }
+
+    async function fetchCobaltApiUrl(videoId) {
+        const response = await fetch(addCacheBuster('https://api.cobalt.tools/api/json'), {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                url: `https://www.youtube.com/watch?v=${videoId}`,
+                aFormat: "mp3",
+                isAudioOnly: true,
+                audioBitrate: 8000 
+            }),
+            cache: 'no-store'
+        });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
+        return data.audio || data.url || null;
+    }
+
+    async function fetchYtdlOnlineUrl(videoId) {
+        const response = await fetch(addCacheBuster(`https://api.allorigins.win/raw?url=https://ytdlp.online/stream?command=https://www.youtube.com/watch?v=${videoId} --get-url`), {
+            timeout: 1000,
+            cache: 'no-store'
+        });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const responseText = await response.text();
+        const urls = responseText.split('\n')
+            .filter(line => line.trim().startsWith('data:'))
+            .map(line => line.substring(5).trim())
+            .filter(url => url.startsWith('http'));
+        return urls.length >= 2 ? urls[1] : (urls.length === 1 ? urls[0] : null);
+    }
+
+    audioPlayer.addEventListener('error', (e) => {
+        console.error('Audio player error:', e);
+        nowPlaying.textContent = 'Error: Could not play audio. Click to retry.';
+        nowPlaying.onclick = () => {
+            const currentSrc = audioPlayer.src;
+            const currentTitle = nowPlaying.textContent.replace('Now playing: ', '');
+            playAudio(currentSrc, currentTitle);
+        };
     });
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    const data = await response.json();
-    return data.status === 'stream' && data.url ? data.url : null;
-}
 
-async function fetchCobaltApiUrl(videoId) {
-    const response = await fetch(addCacheBuster('https://api.cobalt.tools/api/json'), {
-        method: 'POST',
-        headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            url: `https://www.youtube.com/watch?v=${videoId}`,
-            aFormat: "mp3",
-            isAudioOnly: true,
-            audioBitrate: 8000 
-        }),
-        cache: 'no-store'
+    darkModeToggle.addEventListener('click', () => {
+        document.documentElement.classList.toggle('dark');
     });
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    const data = await response.json();
-    return data.audio || data.url || null;
-}
 
-async function fetchYtdlOnlineUrl(videoId) {
-    const response = await fetch(addCacheBuster(`https://api.allorigins.win/raw?url=https://ytdlp.online/stream?command=https://www.youtube.com/watch?v=${videoId} --get-url`), {
-        timeout: 1000,
-        cache: 'no-store'
+    window.addEventListener('load', () => {
+        setDefaultBackground();
+        createArtistElements();
+        fetchTrendingVideos();
     });
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    const responseText = await response.text();
-    const urls = responseText.split('\n')
-        .filter(line => line.trim().startsWith('data:'))
-        .map(line => line.substring(5).trim())
-        .filter(url => url.startsWith('http'));
-    return urls.length >= 2 ? urls[1] : (urls.length === 1 ? urls[0] : null);
-}
 
-audioPlayer.addEventListener('error', (e) => {
-    console.error('Audio player error:', e);
-    nowPlaying.textContent = 'Error: Could not play audio. Click to retry.';
-    nowPlaying.onclick = () => {
-        const currentSrc = audioPlayer.src;
-        const currentTitle = nowPlaying.textContent.replace('Now playing: ', '');
-        playAudio(currentSrc, currentTitle);
-    };
-});
-
-darkModeToggle.addEventListener('click', () => {
-    document.documentElement.classList.toggle('dark');
-});
-
-window.addEventListener('load', () => {
-    setDefaultBackground();
-    fetchTrendingVideos();
-});
-
-audioPlayer.addEventListener('ended', setDefaultBackground);
+    audioPlayer.addEventListener('ended', setDefaultBackground);
     </script>
-</body>
-</html>
+    </body>
+    </html>
