@@ -6,6 +6,7 @@
     <link rel="icon" href="favicon.webp" type="image/webp">
     <title>S-CLOUD</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.3.0/color-thief.umd.js"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -30,23 +31,8 @@
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        .animated-bg {
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
-        }
-
-        .light .animated-bg {
-            background: linear-gradient(-45deg, #f8fafc, #e2e8f0, #cbd5e1, #94a3b8);
-        }
-
-        .dark .animated-bg {
-            background: linear-gradient(-45deg, #1a202c, #2d3748, #4a5568, #718096);
+        body {
+            transition: background-color 1s ease;
         }
 
         .glass {
@@ -70,7 +56,7 @@
         }
 
         .search-container:focus-within {
-            box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.5);
+            box-shadow: 0 0 0 3px rgba(241, 142, 3, 0.5);
         }
 
         .search-input {
@@ -168,7 +154,7 @@
         }
     </style>
 </head>
-<body class="animated-bg text-gray-900 dark:text-gray-100 transition-colors duration-300 font-sans min-h-screen text-sm">
+<body class="text-gray-900 dark:text-gray-100 transition-colors duration-300 font-sans min-h-screen text-sm">
     <div class="relative z-10">
         <header class="sticky top-0 z-50 glass">
             <div class="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -218,7 +204,6 @@
         </footer>
     </div>
     <script>
-
 const searchForm = document.getElementById('searchForm');
 const searchInput = document.getElementById('searchInput');
 const resultsContainer = document.getElementById('results');
@@ -226,6 +211,10 @@ const audioPlayer = document.getElementById('audioPlayer');
 const nowPlaying = document.getElementById('nowPlaying');
 const resultsTitle = document.getElementById('resultsTitle');
 const clearSearchButton = document.getElementById('clearSearch');
+const darkModeToggle = document.getElementById('darkModeToggle');
+
+const colorThief = new ColorThief();
+let currentThumbnail = null;
 
 function addCacheBuster(url) {
     const cacheBuster = `cache_buster=${Date.now()}`;
@@ -271,28 +260,66 @@ clearSearchButton.addEventListener('click', () => {
     fetchTrendingVideos();
 });
 
-function displayResults(items) {
-            resultsContainer.innerHTML = '';
-            items.forEach(item => {
-                if (item.type === 'stream' || item.type === 'video') {
-                    const videoElement = document.createElement('div');
-                    videoElement.className = 'video-card';
-                    videoElement.innerHTML = `
-                        <div class="video-thumbnail">
-                            <img src="${item.thumbnail}" alt="${item.title}" loading="lazy">
-                        </div>
-                        <div class="p-4">
-                            <h3 class="text-lg font-semibold mb-2 line-clamp-2">${item.title}</h3>
-                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">${item.uploaderName}</p>
-                            <p class="text-xs text-gray-500 dark:text-gray-500">${item.views} views • ${item.uploadedDate || item.uploaded}</p>
-                        </div>
-                    `;
-                    videoElement.addEventListener('click', () => playAudio(item.url, item.title));
-                    resultsContainer.appendChild(videoElement);
-                }
+function setBackgroundColor(color) {
+    document.body.style.backgroundColor = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
+}
+
+function getAverageColor(imgEl) {
+    return new Promise((resolve) => {
+        if (imgEl.complete) {
+            resolve(colorThief.getColor(imgEl));
+        } else {
+            imgEl.addEventListener('load', function() {
+                resolve(colorThief.getColor(this));
             });
         }
-async function playAudio(videoUrl, title) {
+    });
+}
+
+async function updateBackgroundColor(thumbnailUrl) {
+    if (thumbnailUrl === currentThumbnail) return;
+    currentThumbnail = thumbnailUrl;
+
+    const img = new Image();
+    img.crossOrigin = "Anonymous";
+    img.src = thumbnailUrl;
+
+    try {
+        const color = await getAverageColor(img);
+        setBackgroundColor(color);
+    } catch (error) {
+        console.error('Error getting average color:', error);
+        setDefaultBackground();
+    }
+}
+
+function setDefaultBackground() {
+    setBackgroundColor([30, 15, 0]); // Orangish black
+}
+
+function displayResults(items) {
+    resultsContainer.innerHTML = '';
+    items.forEach(item => {
+        if (item.type === 'stream' || item.type === 'video') {
+            const videoElement = document.createElement('div');
+            videoElement.className = 'video-card';
+            videoElement.innerHTML = `
+                <div class="video-thumbnail">
+                    <img src="${item.thumbnail}" alt="${item.title}" loading="lazy">
+                </div>
+                <div class="p-4">
+                    <h3 class="text-lg font-semibold mb-2 line-clamp-2">${item.title}</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-1">${item.uploaderName}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-500">${item.views} views • ${item.uploadedDate || item.uploaded}</p>
+                </div>
+            `;
+            videoElement.addEventListener('click', () => playAudio(item.url, item.title, item.thumbnail));
+            resultsContainer.appendChild(videoElement);
+        }
+    });
+}
+
+async function playAudio(videoUrl, title, thumbnailUrl) {
     const videoId = videoUrl.split('v=')[1];
     nowPlaying.textContent = `Loading audio for: ${title}`;
 
@@ -301,10 +328,11 @@ async function playAudio(videoUrl, title) {
         audioPlayer.src = audioUrl;
         await audioPlayer.play();
         nowPlaying.textContent = `Now playing: ${title}`;
+        updateBackgroundColor(thumbnailUrl);
     } catch (error) {
         console.error('Error fetching or playing audio stream:', error);
         nowPlaying.textContent = 'Error: Could not play audio. Click to retry.';
-        nowPlaying.onclick = () => playAudio(videoUrl, title);
+        nowPlaying.onclick = () => playAudio(videoUrl, title, thumbnailUrl);
     }
 }
 
@@ -431,12 +459,16 @@ audioPlayer.addEventListener('error', (e) => {
     };
 });
 
-const darkModeToggle = document.getElementById('darkModeToggle');
 darkModeToggle.addEventListener('click', () => {
     document.documentElement.classList.toggle('dark');
 });
 
-window.addEventListener('load', fetchTrendingVideos);
+window.addEventListener('load', () => {
+    setDefaultBackground();
+    fetchTrendingVideos();
+});
+
+audioPlayer.addEventListener('ended', setDefaultBackground);
     </script>
 </body>
 </html>
