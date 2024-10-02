@@ -415,12 +415,12 @@
 
     async function fetchAudioUrlWithRetry(videoId, retries = 3) {
         const apis = [
-            { name: 'Piped', fetch: fetchPipedApiUrl },
-            { name: 'Second Piped', fetch: fetchSecondPipedApiUrl },
-            { name: 'AceThinker', fetch: fetchAceThinkerApiUrl },
-            { name: 'New API', fetch: fetchNewApiUrl },
-            { name: 'Cobalt', fetch: fetchCobaltApiUrl },
-            { name: 'YtdlOnline', fetch: fetchYtdlOnlineUrl }
+            { name: '1', fetch: fetchPipedApiUrl },
+            { name: '2', fetch: fetchSecondPipedApiUrl },
+            { name: '3', fetch: fetchAceThinkerApiUrl },
+            { name: '4', fetch: fetchNewApiUrl },
+            { name: '5', fetch: fetchCobaltApiUrl },
+            { name: '6', fetch: fetchYtdlOnlineUrl }
         ];
 
         for (let attempt = 0; attempt < retries; attempt++) {
